@@ -1,0 +1,9 @@
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: cloudforge-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,ec2
+      - DEBUG=1
