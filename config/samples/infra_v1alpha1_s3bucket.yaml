@@ -1,0 +1,11 @@
+apiVersion: infra.cloudforge.dev/v1alpha1
+kind: S3Bucket
+metadata:
+  labels:
+    app.kubernetes.io/name: cloudforge
+    app.kubernetes.io/managed-by: kustomize
+  name: s3bucket-sample
+spec:
+  bucketName: cloudforge-sample-bucket
+  acl: private
+  versioningEnabled: false

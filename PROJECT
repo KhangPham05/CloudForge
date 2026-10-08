@@ -8,4 +8,14 @@ layout:
 - go.kubebuilder.io/v4
 projectName: cloudforge
 repo: github.com/KhangPham05/cloudforge
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: cloudforge.dev
+  group: infra
+  kind: S3Bucket
+  path: github.com/KhangPham05/cloudforge/api/v1alpha1
+  version: v1alpha1
 version: "3"
