@@ -54,7 +54,9 @@ var _ = Describe("S3Bucket Controller", func() {
 						Name:      resourceName,
 						Namespace: resourceNamespace,
 					},
-					// TODO(user): Specify other spec details if needed.
+					Spec: infrav1alpha1.S3BucketSpec{
+						BucketName: "cloudforge-envtest-bucket",
+					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}

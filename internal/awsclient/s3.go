@@ -55,8 +55,7 @@ func (c *s3Client) BucketExists(ctx context.Context, bucketName string) (bool, e
 		return true, nil
 	}
 
-	var notFound *types.NotFound
-	if errors.As(err, &notFound) {
+	if _, ok := errors.AsType[*types.NotFound](err); ok {
 		return false, nil
 	}
 
