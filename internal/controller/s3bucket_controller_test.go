@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	infrav1alpha1 "github.com/KhangPham05/cloudforge/api/v1alpha1"
+	"github.com/KhangPham05/cloudforge/internal/awsclient/fake"
 )
 
 var _ = Describe("S3Bucket Controller", func() {
@@ -74,8 +75,9 @@ var _ = Describe("S3Bucket Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &S3BucketReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+				Client:    k8sClient,
+				Scheme:    k8sClient.Scheme(),
+				AWSClient: fake.NewS3Provisioner(),
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{

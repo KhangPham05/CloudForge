@@ -19,18 +19,21 @@ package controller
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	infrav1alpha1 "github.com/KhangPham05/cloudforge/api/v1alpha1"
+	"github.com/KhangPham05/cloudforge/internal/awsclient"
 )
 
 // S3BucketReconciler reconciles a S3Bucket object
 type S3BucketReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme    *runtime.Scheme
+	AWSClient awsclient.S3Provisioner
 }
 
 // +kubebuilder:rbac:groups=infra.cloudforge.dev,resources=s3buckets,verbs=get;list;watch;create;update;patch;delete
@@ -47,9 +50,38 @@ type S3BucketReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.25.0/pkg/reconcile
 func (r *S3BucketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = logf.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
-	// TODO(user): your logic here
+	var bucket infrav1alpha1.S3Bucket
+	if err := r.Get(ctx, req.NamespacedName, &bucket); err != nil {
+		if apierrors.IsNotFound(err) {
+			// The object was deleted between the event firing and us
+			// getting here - nothing left to do.
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "unable to fetch S3Bucket")
+		return ctrl.Result{}, err
+	}
+
+	exists, err := r.AWSClient.BucketExists(ctx, bucket.Spec.BucketName)
+	if err != nil {
+		log.Error(err, "checking if bucket exists", "bucketName", bucket.Spec.BucketName)
+		return ctrl.Result{}, err
+	}
+
+	if !exists {
+		if err := r.AWSClient.CreateBucket(ctx, bucket.Spec.BucketName); err != nil {
+			log.Error(err, "creating bucket", "bucketName", bucket.Spec.BucketName)
+			return ctrl.Result{}, err
+		}
+		log.Info("created bucket", "bucketName", bucket.Spec.BucketName)
+	}
+
+	bucket.Status.Phase = "Ready"
+	if err := r.Status().Update(ctx, &bucket); err != nil {
+		log.Error(err, "updating S3Bucket status")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"os"
@@ -36,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	infrav1alpha1 "github.com/KhangPham05/cloudforge/api/v1alpha1"
+	"github.com/KhangPham05/cloudforge/internal/awsclient"
 	"github.com/KhangPham05/cloudforge/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
@@ -182,9 +184,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	awsCfg, err := awsclient.NewAWSConfig(context.Background())
+	if err != nil {
+		setupLog.Error(err, "Failed to build AWS config")
+		os.Exit(1)
+	}
+
 	if err := (&controller.S3BucketReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		AWSClient: awsclient.NewS3Client(awsCfg),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "s3bucket")
 		os.Exit(1)
