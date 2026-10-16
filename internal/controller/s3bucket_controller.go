@@ -23,11 +23,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	infrav1alpha1 "github.com/KhangPham05/cloudforge/api/v1alpha1"
 	"github.com/KhangPham05/cloudforge/internal/awsclient"
 )
+
+// s3BucketFinalizer marks an S3Bucket as having real AWS state that
+// needs cleanup before Kubernetes is allowed to actually delete the
+// object.
+const s3BucketFinalizer = "infra.cloudforge.dev/s3bucket-finalizer"
 
 // S3BucketReconciler reconciles a S3Bucket object
 type S3BucketReconciler struct {
@@ -61,6 +67,40 @@ func (r *S3BucketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 		log.Error(err, "unable to fetch S3Bucket")
 		return ctrl.Result{}, err
+	}
+
+	if !bucket.DeletionTimestamp.IsZero() {
+		// The object is being deleted. Only do real cleanup if our
+		// finalizer is still present - if it's already gone, someone
+		// (or a previous reconcile) already finished this.
+		if controllerutil.ContainsFinalizer(&bucket, s3BucketFinalizer) {
+			if err := r.AWSClient.EmptyBucket(ctx, bucket.Spec.BucketName); err != nil {
+				log.Error(err, "emptying bucket", "bucketName", bucket.Spec.BucketName)
+				return ctrl.Result{}, err
+			}
+
+			if err := r.AWSClient.DeleteBucket(ctx, bucket.Spec.BucketName); err != nil {
+				log.Error(err, "deleting bucket", "bucketName", bucket.Spec.BucketName)
+				return ctrl.Result{}, err
+			}
+			log.Info("deleted bucket", "bucketName", bucket.Spec.BucketName)
+
+			controllerutil.RemoveFinalizer(&bucket, s3BucketFinalizer)
+			if err := r.Update(ctx, &bucket); err != nil {
+				log.Error(err, "removing finalizer")
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if !controllerutil.ContainsFinalizer(&bucket, s3BucketFinalizer) {
+		controllerutil.AddFinalizer(&bucket, s3BucketFinalizer)
+		if err := r.Update(ctx, &bucket); err != nil {
+			log.Error(err, "adding finalizer")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
 	}
 
 	exists, err := r.AWSClient.BucketExists(ctx, bucket.Spec.BucketName)

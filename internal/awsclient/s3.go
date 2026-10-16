@@ -22,6 +22,10 @@ type S3Provisioner interface {
 	// CreateBucket creates a new S3 bucket.
 	CreateBucket(ctx context.Context, bucketName string) error
 
+	// EmptyBucket deletes every object in a bucket, without deleting
+	// the bucket itself. Call this before DeleteBucket.
+	EmptyBucket(ctx context.Context, bucketName string) error
+
 	// DeleteBucket deletes an S3 bucket. The bucket must already be
 	// empty - the controller's finalizer is responsible for emptying
 	// it first.
@@ -70,6 +74,41 @@ func (c *s3Client) CreateBucket(ctx context.Context, bucketName string) error {
 	if err != nil {
 		return fmt.Errorf("creating bucket %q: %w", bucketName, err)
 	}
+	return nil
+}
+
+// EmptyBucket deletes every object in a bucket, without deleting the
+// bucket itself. A bucket can hold far more objects than fit in one
+// API response, so this pages through ListObjectsV2 and issues a
+// batch DeleteObjects call per page.
+func (c *s3Client) EmptyBucket(ctx context.Context, bucketName string) error {
+	paginator := s3.NewListObjectsV2Paginator(c.client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(bucketName),
+	})
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return fmt.Errorf("listing objects in bucket %q: %w", bucketName, err)
+		}
+
+		if len(page.Contents) == 0 {
+			continue
+		}
+
+		objectIDs := make([]types.ObjectIdentifier, len(page.Contents))
+		for i, obj := range page.Contents {
+			objectIDs[i] = types.ObjectIdentifier{Key: obj.Key}
+		}
+
+		if _, err := c.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+			Bucket: aws.String(bucketName),
+			Delete: &types.Delete{Objects: objectIDs},
+		}); err != nil {
+			return fmt.Errorf("deleting objects in bucket %q: %w", bucketName, err)
+		}
+	}
+
 	return nil
 }
 
