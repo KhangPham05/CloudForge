@@ -1,0 +1,11 @@
+apiVersion: infra.cloudforge.dev/v1alpha1
+kind: VPC
+metadata:
+  labels:
+    app.kubernetes.io/name: cloudforge
+    app.kubernetes.io/managed-by: kustomize
+  name: vpc-sample
+spec:
+  vpcName: cloudforge-sample-vpc
+  cidrBlock: 10.0.0.0/16
+  enableDnsSupport: true

@@ -8,6 +8,7 @@ rules:
   - infra.cloudforge.dev
   resources:
   - s3buckets
+  - vpcs
   verbs:
   - create
   - delete
@@ -20,12 +21,14 @@ rules:
   - infra.cloudforge.dev
   resources:
   - s3buckets/finalizers
+  - vpcs/finalizers
   verbs:
   - update
 - apiGroups:
   - infra.cloudforge.dev
   resources:
   - s3buckets/status
+  - vpcs/status
   verbs:
   - get
   - patch

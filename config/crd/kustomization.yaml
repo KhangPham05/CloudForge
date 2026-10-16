@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/infra.cloudforge.dev_s3buckets.yaml
+- bases/infra.cloudforge.dev_vpcs.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:
