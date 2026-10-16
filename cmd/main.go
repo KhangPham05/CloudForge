@@ -199,8 +199,9 @@ func main() {
 		os.Exit(1)
 	}
 	if err := (&controller.VPCReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:    mgr.GetClient(),
+		Scheme:    mgr.GetScheme(),
+		AWSClient: awsclient.NewEC2Client(awsCfg),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "vpc")
 		os.Exit(1)
