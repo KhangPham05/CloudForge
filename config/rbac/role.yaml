@@ -7,6 +7,7 @@ rules:
 - apiGroups:
   - infra.cloudforge.dev
   resources:
+  - rdsinstances
   - s3buckets
   - vpcs
   verbs:
@@ -20,6 +21,7 @@ rules:
 - apiGroups:
   - infra.cloudforge.dev
   resources:
+  - rdsinstances/finalizers
   - s3buckets/finalizers
   - vpcs/finalizers
   verbs:
@@ -27,6 +29,7 @@ rules:
 - apiGroups:
   - infra.cloudforge.dev
   resources:
+  - rdsinstances/status
   - s3buckets/status
   - vpcs/status
   verbs:

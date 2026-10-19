@@ -27,4 +27,13 @@ resources:
   kind: VPC
   path: github.com/KhangPham05/cloudforge/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: cloudforge.dev
+  group: infra
+  kind: RDSInstance
+  path: github.com/KhangPham05/cloudforge/api/v1alpha1
+  version: v1alpha1
 version: "3"

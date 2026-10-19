@@ -4,6 +4,7 @@
 resources:
 - bases/infra.cloudforge.dev_s3buckets.yaml
 - bases/infra.cloudforge.dev_vpcs.yaml
+- bases/infra.cloudforge.dev_rdsinstances.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:
