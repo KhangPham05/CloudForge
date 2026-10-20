@@ -54,7 +54,12 @@ var _ = Describe("RDSInstance Controller", func() {
 						Name:      resourceName,
 						Namespace: resourceNamespace,
 					},
-					// TODO(user): Specify other spec details if needed.
+					Spec: infrav1alpha1.RDSInstanceSpec{
+						InstanceClass:    "db.t3.micro",
+						Engine:           "postgres",
+						AllocatedStorage: 20,
+						VpcRef:           "some-vpc",
+					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
