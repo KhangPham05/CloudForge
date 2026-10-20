@@ -7,7 +7,9 @@ rules:
 - apiGroups:
   - infra.cloudforge.dev
   resources:
+  - rdsinstances
   - s3buckets
+  - vpcs
   verbs:
   - create
   - delete
@@ -19,13 +21,17 @@ rules:
 - apiGroups:
   - infra.cloudforge.dev
   resources:
+  - rdsinstances/finalizers
   - s3buckets/finalizers
+  - vpcs/finalizers
   verbs:
   - update
 - apiGroups:
   - infra.cloudforge.dev
   resources:
+  - rdsinstances/status
   - s3buckets/status
+  - vpcs/status
   verbs:
   - get
   - patch

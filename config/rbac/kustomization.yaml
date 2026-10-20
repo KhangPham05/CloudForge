@@ -22,6 +22,12 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the cloudforge itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- rdsinstance_admin_role.yaml
+- rdsinstance_editor_role.yaml
+- rdsinstance_viewer_role.yaml
+- vpc_admin_role.yaml
+- vpc_editor_role.yaml
+- vpc_viewer_role.yaml
 - s3bucket_admin_role.yaml
 - s3bucket_editor_role.yaml
 - s3bucket_viewer_role.yaml

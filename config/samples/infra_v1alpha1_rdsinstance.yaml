@@ -1,0 +1,12 @@
+apiVersion: infra.cloudforge.dev/v1alpha1
+kind: RDSInstance
+metadata:
+  labels:
+    app.kubernetes.io/name: cloudforge
+    app.kubernetes.io/managed-by: kustomize
+  name: rdsinstance-sample
+spec:
+  instanceClass: db.t3.micro
+  engine: postgres
+  allocatedStorage: 20
+  vpcRef: vpc-sample
