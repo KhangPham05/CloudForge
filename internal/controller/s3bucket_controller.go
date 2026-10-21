@@ -117,7 +117,7 @@ func (r *S3BucketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		log.Info("created bucket", "bucketName", bucket.Spec.BucketName)
 	}
 
-	bucket.Status.Phase = "Ready"
+	bucket.Status.Phase = phaseReady
 	if err := r.Status().Update(ctx, &bucket); err != nil {
 		log.Error(err, "updating S3Bucket status")
 		return ctrl.Result{}, err

@@ -109,7 +109,7 @@ func (r *VPCReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 
 	vpc.Status.VpcId = vpcID
-	vpc.Status.Phase = "Ready"
+	vpc.Status.Phase = phaseReady
 	if err := r.Status().Update(ctx, &vpc); err != nil {
 		log.Error(err, "updating VPC status")
 		return ctrl.Result{}, err

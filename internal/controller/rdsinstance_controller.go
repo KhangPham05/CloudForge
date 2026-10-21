@@ -18,14 +18,22 @@ package controller
 
 import (
 	"context"
+	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	infrav1alpha1 "github.com/KhangPham05/cloudforge/api/v1alpha1"
 )
+
+// rdsInstanceFinalizer marks an RDSInstance as having real AWS state
+// that needs cleanup before Kubernetes is allowed to actually delete
+// the object.
+const rdsInstanceFinalizer = "infra.cloudforge.dev/rdsinstance-finalizer"
 
 // RDSInstanceReconciler reconciles a RDSInstance object
 type RDSInstanceReconciler struct {
@@ -47,9 +55,61 @@ type RDSInstanceReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.25.0/pkg/reconcile
 func (r *RDSInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = logf.FromContext(ctx)
+	log := logf.FromContext(ctx)
 
-	// TODO(user): your logic here
+	var rds infrav1alpha1.RDSInstance
+	if err := r.Get(ctx, req.NamespacedName, &rds); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		log.Error(err, "unable to fetch RDSInstance")
+		return ctrl.Result{}, err
+	}
+
+	if !rds.DeletionTimestamp.IsZero() {
+		// Nothing has been provisioned yet in Phase 11 - once Phase 12
+		// adds real provisioning, this branch will call DeleteDBInstance
+		// before removing the finalizer, same as S3Bucket/VPC.
+		if controllerutil.ContainsFinalizer(&rds, rdsInstanceFinalizer) {
+			controllerutil.RemoveFinalizer(&rds, rdsInstanceFinalizer)
+			if err := r.Update(ctx, &rds); err != nil {
+				log.Error(err, "removing finalizer")
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if !controllerutil.ContainsFinalizer(&rds, rdsInstanceFinalizer) {
+		controllerutil.AddFinalizer(&rds, rdsInstanceFinalizer)
+		if err := r.Update(ctx, &rds); err != nil {
+			log.Error(err, "adding finalizer")
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
+	var vpc infrav1alpha1.VPC
+	vpcKey := client.ObjectKey{Namespace: rds.Namespace, Name: rds.Spec.VpcRef}
+	if err := r.Get(ctx, vpcKey, &vpc); err != nil {
+		if apierrors.IsNotFound(err) {
+			// The referenced VPC doesn't exist (yet, or ever, if it
+			// was a typo) - not a fetch error on our own object, so
+			// don't treat it like one. Check back later rather than
+			// hot-looping on something that might never resolve.
+			log.Info("referenced VPC not found, requeuing", "vpcRef", rds.Spec.VpcRef)
+			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+		}
+		log.Error(err, "unable to fetch referenced VPC", "vpcRef", rds.Spec.VpcRef)
+		return ctrl.Result{}, err
+	}
+
+	if vpc.Status.Phase != phaseReady {
+		log.Info("referenced VPC not Ready yet, requeuing", "vpcRef", rds.Spec.VpcRef, "vpcPhase", vpc.Status.Phase)
+		return ctrl.Result{RequeueAfter: 15 * time.Second}, nil
+	}
+
+	// TODO(Phase 12): provision the database, generate the credentials Secret.
 
 	return ctrl.Result{}, nil
 }
