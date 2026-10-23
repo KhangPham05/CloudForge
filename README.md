@@ -4,13 +4,29 @@ A Kubernetes operator that manages AWS infrastructure declaratively — define a
 
 > **Status:** all three CRDs are fully implemented — real reconcile logic, finalizer-based cleanup, hermetic tests, and live-demoed proof against real infrastructure. See [`docs/TESTING.md`](docs/TESTING.md) for coverage numbers.
 
+![CloudForge system overview](docs/images/architecture-overview.svg)
+
+```
+kubectl apply  →  Kubernetes API server (kind)  →  controller watches for changes
+                                                            │
+                                                  Reconcile() reads Spec,
+                                                  calls the AWS client,
+                                                  writes Status back
+                                                            │
+                                            internal/awsclient (interface)
+                                            ├── real implementation → LocalStack
+                                            └── in-memory test double
+```
+
 ## What it does
 
 Each CRD follows the same control-loop pattern Kubernetes itself uses for Pods and Deployments — a `Spec` describes desired state, a controller reconciles reality to match, a `Status` reports what's actually true — applied to cloud infrastructure instead of containers.
 
-- **`S3Bucket`** — provisions an S3 bucket; its finalizer empties the bucket before deleting it.
-- **`VPC`** — provisions a VPC with a given CIDR block and DNS settings.
-- **`RDSInstance`** — provisions a database inside a referenced `VPC`, waiting for it to be ready, then hands back credentials as an owner-referenced Kubernetes Secret.
+| Resource | What it does |
+|---|---|
+| **`S3Bucket`** | Provisions an S3 bucket; its finalizer empties the bucket before deleting it. |
+| **`VPC`** | Provisions a VPC with a given CIDR block and DNS settings. |
+| **`RDSInstance`** | Provisions a database inside a referenced `VPC`, waiting for it to be ready, then hands back credentials as an owner-referenced Kubernetes Secret. |
 
 All AWS access goes through an interface-based client layer, so every controller runs against a real SDK client or an in-memory test double — `S3Bucket`/`VPC` are verified against real LocalStack; `RDSInstance` (which LocalStack only supports on a paid tier) runs against the fake by design. Full diagram and reasoning: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
@@ -23,12 +39,24 @@ All AWS access goes through an interface-based client layer, so every controller
 ## Project Structure
 
 ```
-api/v1alpha1/        # CRD type definitions (Spec/Status structs)
+api/v1alpha1/                 # CRD type definitions (Spec/Status structs)
+├── s3bucket_types.go
+├── vpc_types.go
+└── rdsinstance_types.go
+
 internal/
-├── awsclient/        # AWS access, behind interfaces (real SDK + in-memory fakes)
-└── controller/        # one reconciler per CRD
-cmd/main.go            # manager entrypoint
-config/samples/        # example YAML for each CRD
+├── awsclient/                # AWS access, behind interfaces
+│   ├── s3.go, ec2.go, rds.go       # interfaces + real SDK implementations
+│   └── fake/                       # in-memory test doubles
+└── controller/                # one reconciler per CRD
+    ├── s3bucket_controller.go
+    ├── vpc_controller.go
+    └── rdsinstance_controller.go
+
+cmd/main.go                    # manager entrypoint, wires everything together
+config/samples/                # example YAML for each CRD
+kind-config.yaml                # local Kubernetes cluster definition
+docker-compose.localstack.yaml  # local AWS emulator
 ```
 
 ## Getting Started
@@ -65,6 +93,8 @@ go test -tags=integration ./...        # round-trips real calls against LocalSta
 
 ## Documentation
 
-- [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md) — how it's built: the reconcile loop, system diagram, command reference.
-- [**`docs/DESIGN_DECISIONS.md`**](docs/DESIGN_DECISIONS.md) — why it's built this way: scope cuts, trade-offs, the judgment behind the pattern.
-- [**`docs/TESTING.md`**](docs/TESTING.md) — how we know it's correct: testing strategy, bugs caught, real numbers.
+| Doc | Covers |
+|---|---|
+| [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md) | How it's built: the reconcile loop, system diagram, command reference. |
+| [**`docs/DESIGN_DECISIONS.md`**](docs/DESIGN_DECISIONS.md) | Why it's built this way: scope cuts, trade-offs, the judgment behind the pattern. |
+| [**`docs/TESTING.md`**](docs/TESTING.md) | How we know it's correct: testing strategy, bugs caught, real numbers. |
