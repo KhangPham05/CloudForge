@@ -1,0 +1,80 @@
+<svg width="1320" height="470" viewBox="0 0 1320 470" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155" />
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626" />
+    </marker>
+  </defs>
+
+  <rect width="1320" height="470" fill="#ffffff" />
+
+  <!-- Developer / kubectl actor -->
+  <circle cx="55" cy="140" r="16" fill="#1e293b" />
+  <circle cx="55" cy="126" r="8" fill="#1e293b" />
+  <text x="55" y="180" font-size="13" fill="#1e293b" text-anchor="middle">You</text>
+  <text x="55" y="196" font-size="12" fill="#64748b" text-anchor="middle">kubectl</text>
+
+  <!-- Host laptop container -->
+  <rect x="140" y="50" width="340" height="330" rx="14" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="6,4" />
+  <text x="160" y="76" font-size="15" font-weight="bold" fill="#2563eb">Your laptop</text>
+
+  <rect x="165" y="90" width="290" height="270" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" />
+  <text x="185" y="115" font-size="13" font-weight="bold" fill="#1e3a8a">CloudForge operator (make run)</text>
+
+  <rect x="185" y="135" width="250" height="60" rx="8" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5" />
+  <text x="310" y="159" font-size="12.5" fill="#1e3a8a" text-anchor="middle">S3Bucket / VPC / RDSInstance</text>
+  <text x="310" y="177" font-size="12.5" fill="#1e3a8a" text-anchor="middle">reconcilers</text>
+
+  <rect x="185" y="290" width="250" height="60" rx="8" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5" />
+  <text x="310" y="314" font-size="12.5" fill="#1e3a8a" text-anchor="middle">internal/awsclient</text>
+  <text x="310" y="332" font-size="12.5" fill="#1e3a8a" text-anchor="middle">(interface)</text>
+
+  <line x1="310" y1="195" x2="310" y2="288" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)" />
+
+  <!-- kind cluster container -->
+  <rect x="560" y="50" width="220" height="150" rx="14" fill="#ecfdf5" stroke="#059669" stroke-width="2" />
+  <text x="580" y="76" font-size="15" font-weight="bold" fill="#065f46">kind cluster</text>
+  <rect x="580" y="92" width="180" height="80" rx="8" fill="#ffffff" stroke="#34d399" stroke-width="1.5" />
+  <text x="670" y="126" font-size="12.5" fill="#065f46" text-anchor="middle">Kubernetes API server</text>
+  <text x="670" y="144" font-size="12.5" fill="#065f46" text-anchor="middle">+ etcd</text>
+
+  <!-- LocalStack container -->
+  <rect x="840" y="50" width="220" height="150" rx="14" fill="#fffbeb" stroke="#d97706" stroke-width="2" />
+  <text x="860" y="76" font-size="15" font-weight="bold" fill="#92400e">LocalStack</text>
+  <rect x="860" y="92" width="85" height="80" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5" />
+  <text x="902" y="130" font-size="13" fill="#92400e" text-anchor="middle">S3</text>
+  <text x="902" y="150" font-size="11" fill="#b45309" text-anchor="middle">real</text>
+  <rect x="955" y="92" width="85" height="80" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5" />
+  <text x="997" y="124" font-size="12" fill="#92400e" text-anchor="middle">EC2 /</text>
+  <text x="997" y="140" font-size="12" fill="#92400e" text-anchor="middle">VPC</text>
+  <text x="997" y="158" font-size="11" fill="#b45309" text-anchor="middle">real</text>
+
+  <!-- Fake RDS box -->
+  <rect x="1120" y="270" width="160" height="110" rx="12" fill="#fef2f2" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,4" />
+  <text x="1140" y="298" font-size="13" font-weight="bold" fill="#991b1b">In-memory</text>
+  <text x="1140" y="316" font-size="13" font-weight="bold" fill="#991b1b">fake</text>
+  <text x="1140" y="338" font-size="11.5" fill="#991b1b">RDS only — LocalStack's</text>
+  <text x="1140" y="353" font-size="11.5" fill="#991b1b">free tier excludes RDS</text>
+
+  <!-- Arrow: kubectl -> kind API (routed above everything) -->
+  <path d="M 68 135 L 68 20 L 670 20 L 670 48" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="330" y="16" font-size="11.5" fill="#334155">apply / get</text>
+
+  <!-- Arrow: reconcilers -> kind API (watch, push) -->
+  <path d="M 435 160 L 578 125" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="463" y="138" font-size="11.5" fill="#334155">watch (push)</text>
+
+  <!-- Arrow: awsclient -> LocalStack (real SDK calls), routed clear below kind cluster -->
+  <path d="M 435 312 L 950 312 L 950 198" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="620" y="304" font-size="11.5" fill="#334155">real SDK calls</text>
+
+  <!-- Arrow: awsclient -> fake RDS -->
+  <path d="M 435 334 L 1118 320" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arrowRed)" />
+  <text x="620" y="346" font-size="11.5" fill="#991b1b">RDS only</text>
+
+  <!-- Caption -->
+  <text x="140" y="420" font-size="13" fill="#334155" font-weight="bold">kubectl only ever talks to the kind cluster.</text>
+  <text x="140" y="440" font-size="13" fill="#334155">The operator is the only thing that talks to both Kubernetes and AWS. RDS is backed by the fake by design — see DESIGN_DECISIONS.md.</text>
+</svg>

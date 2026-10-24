@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -38,6 +39,7 @@ import (
 
 	infrav1alpha1 "github.com/KhangPham05/cloudforge/api/v1alpha1"
 	"github.com/KhangPham05/cloudforge/internal/awsclient"
+	"github.com/KhangPham05/cloudforge/internal/awsclient/fake"
 	"github.com/KhangPham05/cloudforge/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
@@ -209,6 +211,10 @@ func main() {
 	if err := (&controller.RDSInstanceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		// RDS is deliberately backed by the in-memory fake, not a real
+		// AWS SDK client - LocalStack only supports RDS on a paid
+		// tier. See PLAN.md's RDS strategy section for the reasoning.
+		AWSClient: fake.NewRDSProvisioner(5 * time.Second),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "rdsinstance")
 		os.Exit(1)

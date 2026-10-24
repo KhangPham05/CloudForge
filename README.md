@@ -2,19 +2,9 @@
 
 A Kubernetes operator that manages AWS infrastructure declaratively — define a `VPC`, `S3Bucket`, or `RDSInstance` as a Kubernetes object, and a controller reconciles real cloud state to match. Built with [kubebuilder](https://book.kubebuilder.io/) and [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime), developed and tested entirely for free against [kind](https://kind.sigs.k8s.io/) and [LocalStack](https://www.localstack.cloud/).
 
-> **Status: in active development.** `S3Bucket` and `VPC` are fully implemented — create, finalizer-based cleanup, and tests, verified against a real LocalStack container. `RDSInstance` has its types and an in-memory test double defined; its reconcile logic (waiting on a referenced `VPC`, generating a credentials Secret) is still in progress.
+> **Status:** all three CRDs are fully implemented — real reconcile logic, finalizer-based cleanup, hermetic tests, and live-demoed proof against real infrastructure. See [`docs/TESTING.md`](docs/TESTING.md) for coverage numbers.
 
-## Description
-
-CloudForge extends the Kubernetes API with three custom resources that represent real AWS infrastructure. Each one follows the same pattern: a `Spec` describes the desired state, a controller watches for changes and reconciles reality to match by calling the AWS SDK, and a `Status` reports back what's actually true — the same control-loop pattern Kubernetes itself uses for Pods and Deployments, applied to cloud infrastructure instead of containers.
-
-- **`S3Bucket`** — provisions an S3 bucket; its finalizer empties the bucket (even if objects were added to it) before deleting it.
-- **`VPC`** — provisions a VPC with a given CIDR block and DNS settings.
-- **`RDSInstance`** *(in progress)* — provisions a database inside a referenced `VPC`, waiting for that VPC to be ready before proceeding, and will hand back credentials as a generated Kubernetes Secret.
-
-All AWS access goes through an interface-based client layer (`internal/awsclient`), so every controller can run against a real AWS SDK client or an in-memory test double. That's what keeps development and testing entirely free: `S3Bucket` and `VPC` are verified against a real [LocalStack](https://www.localstack.cloud/) container, while `RDSInstance` (which LocalStack only supports on a paid tier) is built and tested against the in-memory double instead.
-
-## Architecture
+![CloudForge system overview](docs/images/architecture-overview.svg)
 
 ```
 kubectl apply  →  Kubernetes API server (kind)  →  controller watches for changes
@@ -28,7 +18,23 @@ kubectl apply  →  Kubernetes API server (kind)  →  controller watches for ch
                                             └── in-memory test double
 ```
 
-_A diagram of how `S3Bucket`, `VPC`, and `RDSInstance` relate — including the `RDSInstance` → `VPC` dependency — will be added here once all three are complete._
+## What it does
+
+Each CRD follows the same control-loop pattern Kubernetes itself uses for Pods and Deployments — a `Spec` describes desired state, a controller reconciles reality to match, a `Status` reports what's actually true — applied to cloud infrastructure instead of containers.
+
+| Resource | What it does |
+|---|---|
+| **`S3Bucket`** | Provisions an S3 bucket; its finalizer empties the bucket before deleting it. |
+| **`VPC`** | Provisions a VPC with a given CIDR block and DNS settings. |
+| **`RDSInstance`** | Provisions a database inside a referenced `VPC`, waiting for it to be ready, then hands back credentials as an owner-referenced Kubernetes Secret. |
+
+All AWS access goes through an interface-based client layer, so every controller runs against a real SDK client or an in-memory test double — `S3Bucket`/`VPC` are verified against real LocalStack; `RDSInstance` (which LocalStack only supports on a paid tier) runs against the fake by design. Full diagram and reasoning: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## A few things worth knowing
+
+- Caught a credential-loss bug (RDS's one-time master password) by reasoning through the data lifecycle before writing a single test — full story in [`docs/DESIGN_DECISIONS.md`](docs/DESIGN_DECISIONS.md).
+- Designed test coverage around a real limit of the test environment (`envtest` doesn't run Kubernetes's garbage-collector controller) — full story in [`docs/TESTING.md`](docs/TESTING.md).
+- All three resources can be applied in one command, in any order — the reconcile loop's wait/requeue logic handles dependency ordering on its own, verified live, not assumed.
 
 ## Project Structure
 
@@ -56,9 +62,7 @@ docker-compose.localstack.yaml  # local AWS emulator
 ## Getting Started
 
 ### Prerequisites
-- Go 1.24+
-- Docker
-- [kind](https://kind.sigs.k8s.io/) and [kubebuilder](https://book.kubebuilder.io/)
+- Go 1.24+, Docker, [kind](https://kind.sigs.k8s.io/), [kubebuilder](https://book.kubebuilder.io/)
 - A free [LocalStack](https://www.localstack.cloud/) account (required even for free-tier services) — set `LOCALSTACK_AUTH_TOKEN` in a local `.env` file
 
 ### Run it locally
@@ -76,8 +80,8 @@ make run       # starts the operator on the host
 In another terminal:
 
 ```sh
-kubectl apply -f config/samples/infra_v1alpha1_s3bucket.yaml
-kubectl get s3bucket -w
+kubectl apply -k config/samples/
+kubectl get vpc,s3bucket,rdsinstance -w
 ```
 
 ### Tests
@@ -87,18 +91,10 @@ make test                              # hermetic envtest suite - no LocalStack 
 go test -tags=integration ./...        # round-trips real calls against LocalStack
 ```
 
-## License
+## Documentation
 
-Copyright 2026.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+| Doc | Covers |
+|---|---|
+| [**`docs/ARCHITECTURE.md`**](docs/ARCHITECTURE.md) | How it's built: the reconcile loop, system diagram, command reference. |
+| [**`docs/DESIGN_DECISIONS.md`**](docs/DESIGN_DECISIONS.md) | Why it's built this way: scope cuts, trade-offs, the judgment behind the pattern. |
+| [**`docs/TESTING.md`**](docs/TESTING.md) | How we know it's correct: testing strategy, bugs caught, real numbers. |
