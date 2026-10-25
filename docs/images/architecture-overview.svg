@@ -1,4 +1,4 @@
-<svg width="1320" height="470" viewBox="0 0 1320 470" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+<svg width="1320" height="510" viewBox="0 0 1320 510" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155" />
@@ -8,7 +8,11 @@
     </marker>
   </defs>
 
-  <rect width="1320" height="470" fill="#ffffff" />
+  <rect width="1320" height="510" fill="#ffffff" />
+
+  <text x="20" y="28" font-size="18" font-weight="bold" fill="#1e293b">CloudForge — System Architecture</text>
+
+  <g transform="translate(0,40)">
 
   <!-- Developer / kubectl actor -->
   <circle cx="55" cy="140" r="16" fill="#1e293b" />
@@ -59,12 +63,12 @@
   <text x="1140" y="353" font-size="11.5" fill="#991b1b">free tier excludes RDS</text>
 
   <!-- Arrow: kubectl -> kind API (routed above everything) -->
-  <path d="M 68 135 L 68 20 L 670 20 L 670 48" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)" />
+  <path d="M 68 135 L 68 20 L 670 20 L 670 90" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)" />
   <text x="330" y="16" font-size="11.5" fill="#334155">apply / get</text>
 
   <!-- Arrow: reconcilers -> kind API (watch, push) -->
   <path d="M 435 160 L 578 125" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)" />
-  <text x="463" y="138" font-size="11.5" fill="#334155">watch (push)</text>
+  <text x="489" y="155" font-size="11.5" fill="#334155">watch (push)</text>
 
   <!-- Arrow: awsclient -> LocalStack (real SDK calls), routed clear below kind cluster -->
   <path d="M 435 312 L 950 312 L 950 198" fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)" />
@@ -77,4 +81,6 @@
   <!-- Caption -->
   <text x="140" y="420" font-size="13" fill="#334155" font-weight="bold">kubectl only ever talks to the kind cluster.</text>
   <text x="140" y="440" font-size="13" fill="#334155">The operator is the only thing that talks to both Kubernetes and AWS. RDS is backed by the fake by design — see DESIGN_DECISIONS.md.</text>
+
+  </g>
 </svg>

@@ -1,4 +1,4 @@
-<svg width="900" height="560" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+<svg width="900" height="600" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155" />
@@ -8,7 +8,11 @@
     </marker>
   </defs>
 
-  <rect width="900" height="560" fill="#ffffff" />
+  <rect width="900" height="600" fill="#ffffff" />
+
+  <text x="20" y="28" font-size="18" font-weight="bold" fill="#1e293b">RDS Waiting on VPC Readiness — Sequence Diagram</text>
+
+  <g transform="translate(0,40)">
 
   <!-- Lifeline headers -->
   <rect x="40" y="25" width="240" height="50" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5" />
@@ -60,4 +64,6 @@
   <!-- Caption -->
   <text x="40" y="520" font-size="13" fill="#334155" font-weight="bold">Both "Get" calls use the exact same method — just pointed at a different object.</text>
   <text x="40" y="540" font-size="13" fill="#334155">Cross-resource waiting isn't a special mechanism; it's the same client, a different key, and patience.</text>
+
+  </g>
 </svg>
